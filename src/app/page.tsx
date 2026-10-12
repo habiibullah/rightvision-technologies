@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import ServicesSection from "@/components/home/services-section";
 
 const services = [
   "Website Development",
@@ -141,6 +142,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <ServicesSection />
     </main>
   );
 }
