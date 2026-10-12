@@ -3,6 +3,7 @@ import Link from "next/link";
 import ServicesSection from "@/components/home/services-section";
 import ProductsSection from "@/components/home/products-section";
 import AboutSection from "@/components/home/about-section";
+import PortfolioSection from "@/components/home/portfolio-section";
 
 const services = [
   "Website Development",
@@ -44,6 +45,9 @@ export default function Home() {
             </Link>
             <Link href="#products" className="hover:text-orange-600">
               Products
+            </Link>
+            <Link href="#portfolio" className="hover:text-orange-600">
+              Portfolio
             </Link>
             <Link href="#contact" className="hover:text-orange-600">
               Contact
@@ -148,6 +152,7 @@ export default function Home() {
       <AboutSection />
       <ServicesSection />
       <ProductsSection />
+      <PortfolioSection />
     </main>
   );
 }
