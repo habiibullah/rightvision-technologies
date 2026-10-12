@@ -2,6 +2,7 @@
 import Link from "next/link";
 import ServicesSection from "@/components/home/services-section";
 import ProductsSection from "@/components/home/products-section";
+import AboutSection from "@/components/home/about-section";
 
 const services = [
   "Website Development",
@@ -144,6 +145,7 @@ export default function Home() {
         </div>
       </section>
 
+      <AboutSection />
       <ServicesSection />
       <ProductsSection />
     </main>
