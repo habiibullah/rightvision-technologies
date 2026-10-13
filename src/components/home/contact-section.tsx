@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
 
 const contactDetails = [
   {
@@ -26,7 +29,90 @@ const services = [
   "Other",
 ];
 
+type FormStatus = {
+  type: "success" | "error";
+  message: string;
+} | null;
+
 export default function ContactSection() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<FormStatus>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    const form = event.currentTarget;
+
+    if (!form.reportValidity()) return;
+
+    const formData = new FormData(form);
+
+    const payload = {
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      service: String(formData.get("service") ?? "").trim(),
+      message: String(formData.get("message") ?? "").trim(),
+      website: String(formData.get("website") ?? ""),
+    };
+
+    if (payload.name.length < 2 || payload.name.length > 100) {
+      setStatus({
+        type: "error",
+        message: "Please enter a name containing 2 to 100 characters.",
+      });
+      return;
+    }
+
+    if (payload.message.length < 20 || payload.message.length > 5000) {
+      setStatus({
+        type: "error",
+        message: "Project details must contain 20 to 5000 characters.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result: { message?: string; error?: string } =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to send your enquiry. Please try again.",
+        );
+      }
+
+      setStatus({
+        type: "success",
+        message: result.message || "Your enquiry has been sent successfully.",
+      });
+
+      form.reset();
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <section
       id="contact"
@@ -43,9 +129,8 @@ export default function ContactSection() {
           </h2>
 
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Have a software project in mind? Tell us about your
-            requirements and let&apos;s discuss how we can help
-            bring your ideas to life.
+            Have a software project in mind? Tell us about your requirements and
+            let&apos;s discuss how we can help bring your ideas to life.
           </p>
         </div>
 
@@ -53,14 +138,12 @@ export default function ContactSection() {
           {/* Contact information */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl bg-[#102544] p-8 text-white shadow-xl sm:p-10">
-              <h3 className="text-2xl font-extrabold">
-                Contact Information
-              </h3>
+              <h3 className="text-2xl font-extrabold">Contact Information</h3>
 
               <p className="mt-4 leading-7 text-slate-300">
-                We work with businesses, entrepreneurs,
-                educational institutions, and organizations
-                seeking practical technology solutions.
+                We work with businesses, entrepreneurs, educational
+                institutions, and organizations seeking practical technology
+                solutions.
               </p>
 
               <div className="mt-9 space-y-8">
@@ -75,9 +158,7 @@ export default function ContactSection() {
                         href={detail.href}
                         className="break-words text-base font-medium text-white transition hover:text-orange-300"
                         target={
-                          detail.href.startsWith("https")
-                            ? "_blank"
-                            : undefined
+                          detail.href.startsWith("https") ? "_blank" : undefined
                         }
                         rel={
                           detail.href.startsWith("https")
@@ -88,9 +169,7 @@ export default function ContactSection() {
                         {detail.value}
                       </a>
                     ) : (
-                      <p className="text-base font-medium">
-                        {detail.value}
-                      </p>
+                      <p className="text-base font-medium">{detail.value}</p>
                     )}
                   </div>
                 ))}
@@ -98,29 +177,26 @@ export default function ContactSection() {
 
               <div className="mt-10 border-t border-white/15 pt-7">
                 <p className="text-sm leading-7 text-slate-300">
-                  Serving clients across Nigeria and
-                  internationally through remote collaboration.
+                  Serving clients across Nigeria and internationally through
+                  remote collaboration.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Quote request form */}
+          {/* Functional quotation form */}
           <div className="lg:col-span-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 shadow-sm sm:p-10">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:p-10">
               <h3 className="text-2xl font-extrabold text-[#102544]">
                 Request a Project Quote
               </h3>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Share a few details about your project.
-                Our online enquiry submission feature
-                is being prepared.
+                Tell us about your project and the services you need. We&apos;ll
+                review your enquiry and get back to you.
               </p>
 
-              <form
-                className="mt-8 space-y-6"
-              >
+              <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
                     <label
@@ -135,9 +211,12 @@ export default function ContactSection() {
                       name="name"
                       type="text"
                       required
-                      disabled
+                      minLength={2}
+                      maxLength={100}
+                      autoComplete="name"
                       placeholder="Your full name"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-orange-500"
+                      disabled={isSubmitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
                     />
                   </div>
 
@@ -154,9 +233,11 @@ export default function ContactSection() {
                       name="email"
                       type="email"
                       required
-                      disabled
+                      maxLength={254}
+                      autoComplete="email"
                       placeholder="you@example.com"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-orange-500"
+                      disabled={isSubmitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -173,9 +254,9 @@ export default function ContactSection() {
                     id="contact-service"
                     name="service"
                     required
-                    disabled
                     defaultValue=""
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-orange-500"
+                    disabled={isSubmitting}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
                   >
                     <option value="" disabled>
                       Select a service
@@ -202,23 +283,58 @@ export default function ContactSection() {
                     name="message"
                     rows={5}
                     required
-                    disabled
+                    minLength={20}
+                    maxLength={5000}
+                    disabled={isSubmitting}
                     placeholder="Tell us about your project, goals, and requirements..."
-                    className="w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-orange-500"
+                    className="w-full resize-y rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60"
                   />
                 </div>
 
+                {/* Honeypot field for automated spam */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+                >
+                  <label htmlFor="contact-website">
+                    Leave this field empty
+                  </label>
+                  <input
+                    id="contact-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
+                {status && (
+                  <div
+                    role={status.type === "error" ? "alert" : "status"}
+                    aria-live="polite"
+                    className={`rounded-lg border px-4 py-3 text-sm leading-6 ${
+                      status.type === "success"
+                        ? "border-green-200 bg-green-50 text-green-800"
+                        : "border-red-200 bg-red-50 text-red-800"
+                    }`}
+                  >
+                    {status.message}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg bg-slate-400 px-6 py-4 font-bold text-white"
+                  disabled={isSubmitting}
+                  className="w-full rounded-lg bg-[#F97316] px-6 py-4 font-bold text-white transition hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-500/30 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Online Quote Requests Coming Soon
+                  {isSubmitting
+                    ? "Sending Your Enquiry..."
+                    : "Submit Project Enquiry →"}
                 </button>
 
                 <p className="text-center text-sm text-slate-500">
-                  For immediate enquiries, please use the
-                  email or WhatsApp contact details provided.
+                  Prefer to speak with us directly? Contact us through email or
+                  WhatsApp using the details provided.
                 </p>
               </form>
             </div>
